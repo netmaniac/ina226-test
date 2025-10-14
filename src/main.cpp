@@ -9,6 +9,9 @@
 #include <ESP8266HTTPClient.h>
 
 #include <ArduinoOTA.h>
+#include "Wire.h"
+#include "INA226.h"
+INA226 INA(0x40);
 
 extern const char *ssid;
 extern const char *password;
@@ -41,12 +44,28 @@ void connectWiFi() {
 
 //*****************************
 void setup() {
+    delay(2000);
     Serial.begin(115200); // Uruchomienie portu szeregowego z prędkością 9600
     Serial.println("Boot....");
     Serial.print(F("Chip ID:"));
     Serial.println(String(ESP.getChipId(),10));
     connectWiFi();
     ArduinoOTA.begin();
+
+    Wire.begin(D4, D3);
+    if (!INA.begin() )
+    {
+        Serial.println("could not connect. Fix and Reboot");
+    }
+    int rc;
+    // rc=INA.setMaxCurrentShunt(2, 0.1);
+    // Serial.printf("rc=%d isCal=%d LSB(uA)=%.1f\n", rc, INA.isCalibrated(), INA.getCurrentLSB_uA());
+    rc=INA.configure(0.1, 0.024719238);
+    Serial.printf("rc=%d isCal=%d LSB(uA)=%.1f\n", rc, INA.isCalibrated(), INA.getCurrentLSB_uA());
+    Serial.print("Wait for register.... ");
+    delay(1000);
+    Serial.println(String(INA.getRegister(0x5),16));
+
 
 
 }
@@ -85,16 +104,32 @@ if (WiFi.status() != WL_CONNECTED) {
 }
 
 //*****************************
-const unsigned long INTERVAL = 90*1000;
+const unsigned long INTERVAL = 120*1000;
 unsigned long last_send = 0;
 
 void loop() {
+    Serial.println("\nBUS\tSHUNT\tCURRENT\tPOWER");
+    for (int i = 0; i < 20; i++)
+    {
+        Serial.print(INA.getBusVoltage(), 3);
+        Serial.print("\t");
+        Serial.print(INA.getShuntVoltage_mV(), 3);
+        Serial.print("\t");
+        Serial.print(INA.getCurrent_mA(), 3);
+        Serial.print("\t");
+        Serial.print(INA.getPower_mW(), 3);
+        Serial.println();
+        delay(1000);
+    }
+
+
     if (millis() - last_send >= INTERVAL) {
         String postData;
         postData = String(MEASUREMENT_NAME) + String(F(",host=esp8266-")) + String(ESP.getChipId()) + F(" ");
         postData += "uptime=" + String(millis());
         postData += ",reading=" + String(12.3);
         sendToDB(postData);
+        last_send = millis();
     }
     ArduinoOTA.handle();
 
