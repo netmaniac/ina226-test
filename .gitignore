@@ -1,0 +1,10 @@
+.pio
+.clang_complete
+.gcc-flags.json
+.idea
+cmake-*
+CMake*
+*~
+builds/*
+src/wifi.h
+.travis.yml

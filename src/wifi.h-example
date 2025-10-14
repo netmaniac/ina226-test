@@ -1,0 +1,5 @@
+#ifndef INFLUX_WIFI_H
+#define INFLUX_WIFI_H
+extern const char *ssid = "SSID";
+extern const char *password = "PASSWD";
+#endif

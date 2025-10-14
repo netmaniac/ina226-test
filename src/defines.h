@@ -1,0 +1,11 @@
+//
+//
+//
+
+#ifndef INFLUX_DEFINES_H
+#define INFLUX_DEFINES_H
+
+#define SOFT_VERSION   F("INFLUX-2020-1")
+#define MEASUREMENT_NAME   F("bme280_test")
+
+#endif //WIATR_NODEMCUV2_DEFINES_H
