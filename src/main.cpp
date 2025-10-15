@@ -16,6 +16,8 @@ INA226 INA(0x40);
 
 extern const char *ssid;
 extern const char *password;
+extern const char *ssid;
+extern const char *password;
 
 #include "wifi.h"
 
@@ -23,11 +25,14 @@ extern const char *password;
 //*****************************
 #define CNT_LIMIT 20
 
-void connectWiFi() {
+void connectWiFi(bool second = false) {
     byte cnt = 0;
     WiFi.mode(WIFI_STA);
 
-    WiFi.begin(ssid, password);
+    if (second) {
+        WiFi.begin(ssid2, password2);
+    } else
+        WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED && cnt++ < CNT_LIMIT) {
         delay(500);
         Serial.print(".");
@@ -38,7 +43,11 @@ void connectWiFi() {
         Serial.println("IP address: ");
         Serial.println(WiFi.localIP());
     } else {
-        Serial.println("Failed connecting to network.");
+        if (!second) {
+            connectWiFi(true);
+        } else {
+            Serial.println("Failed connecting to network.");
+        }
     }
 }
 
@@ -94,8 +103,6 @@ unsigned sampleCount = 0;
 unsigned long aggregateCount = 0;
 
 
-
-
 //*****************************
 void setup() {
     delay(2000);
@@ -125,7 +132,6 @@ void setup() {
     lastAggregation = millis();
     lastMeasure = micros();
 }
-
 
 
 void resetAggregate() {
@@ -173,7 +179,7 @@ void aggregate() {
     if (
         sampleCount == 0 || //nie ma danych
         aggregateCount == 60 //zebralismy już 60 próbek
-        ) { return; }
+    ) { return; }
 
     for (int i = 0; i < MAX_SAMPLES_IN_SECOND; i++) {
         for (int j = 0; j < 3; j++) {
@@ -196,7 +202,7 @@ void loop() {
         lastMeasure = micros();
     }
     if (millis() - lastAggregation > 1000) {
-        Serial.printf("Samples taken: %d, aggregatCnt %d\n", sampleCount,aggregateCount);
+        Serial.printf("Samples taken: %d, aggregatCnt %d\n", sampleCount, aggregateCount);
         aggregate();
         lastAggregation = millis();
     }
@@ -204,17 +210,17 @@ void loop() {
     if (millis() - last_send >= INTERVAL && aggregateCount > 0 || aggregateCount == 60) {
         float sum[3] = {0, 0, 0};
 
-        for (int i=0;i<aggregateCount;i++) {
-            for (int j=0;j<3;j++) {
+        for (int i = 0; i < aggregateCount; i++) {
+            for (int j = 0; j < 3; j++) {
                 sum[j] += DATA_AGGREGATE[i][j];
             }
         }
         String postData;
         postData = String(MEASUREMENT_NAME) + String(F(",host=esp8266-")) + String(ESP.getChipId()) + F(" ");
         postData += "uptime=" + String(millis());
-        postData += ",avgCurr=" + String(sum[CURR_IDX]/aggregateCount, 2);
-        postData += ",avgPwr=" + String(sum[PWR_IDX]/aggregateCount, 2);
-        postData += ",avgV=" + String(sum[VBUS_IDX]/aggregateCount, 2);
+        postData += ",avgCurr=" + String(sum[CURR_IDX] / aggregateCount, 2);
+        postData += ",avgPwr=" + String(sum[PWR_IDX] / aggregateCount, 2);
+        postData += ",avgV=" + String(sum[VBUS_IDX] / aggregateCount, 2);
 
         postData += ",maxV=" + String(MAX[VBUS_IDX], 2);
         postData += ",minV=" + String(MIN[VBUS_IDX], 2);
