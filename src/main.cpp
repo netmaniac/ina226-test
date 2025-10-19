@@ -231,6 +231,7 @@ void loop() {
         resetSecondStats();
         resetAggregate();
         last_send = millis();
+        lastMeasure = micros();
     }
     ArduinoOTA.handle();
 }
